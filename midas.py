@@ -1,9 +1,13 @@
 import requests
 import time
 from colorama import Fore, Style, init
+import sys
+import io
 
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 init(autoreset=True)
 
+url_register = "https://api-tg-app.midas.app/api/auth/register"
 url_user = "https://api-tg-app.midas.app/api/user"
 url_game = "https://api-tg-app.midas.app/api/game/play"
 url_referral = "https://api-tg-app.midas.app/api/referral/status"
@@ -11,10 +15,35 @@ url_referral_claim = "https://api-tg-app.midas.app/api/referral/claim"
 
 user_agent = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
-def read_auth_tokens(file_path):
+def read_init_data(file_path):
     with open(file_path, 'r') as file:
-        tokens = [line.strip() for line in file.readlines()]
-    return tokens
+        init_data = [line.strip() for line in file.readlines()]
+    return init_data
+
+def get_auth_token(init_data):
+    headers = {
+        "accept": "application/json, text/plain, */*",
+        "content-type": "application/json",
+        "User-Agent": user_agent
+    }
+
+    body = {
+        "initData": init_data
+    }
+
+    try:
+        response = requests.post(url_register, headers=headers, json=body, timeout=10)
+        response.raise_for_status()
+        token = response.text
+        if token:
+            print(f"Berhasil mendapatkan token: ...{token[-20:]}")  # Menampilkan 20 karakter terakhir
+            return token
+        else:
+            print(f"{Fore.RED}Token tidak ditemukan dalam respons.{Style.RESET_ALL}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Request error saat mendapatkan token otorisasi: {e}")
+        return None
 
 def get_request(url, headers):
     try:
@@ -40,7 +69,6 @@ def claim_referral_rewards(headers, retries=3):
         
         if referral_data:
             can_claim = referral_data.get("canClaim", False)
-            
             if can_claim:
                 print(f"{Fore.GREEN}Klaim tersedia! Mengeksekusi klaim...{Style.RESET_ALL}")
                 claim_response = post_request(url_referral_claim, headers)
@@ -113,13 +141,19 @@ def play_game(headers):
         print(f"Game selesai! Anda telah melakukan {taps} tap, tetapi hanya mendapatkan {total_points} poin.")
 
 if __name__ == "__main__":
-    while True:  # Loop untuk mengulang setiap 60 menit
-        auth_tokens = read_auth_tokens('auth.txt')
+    while True:
+        init_data_list = read_init_data('auth.txt')
         total_points_sum = 0
         
-        for token in auth_tokens:
+        for init_data in init_data_list:
             print(f"\n{Fore.YELLOW}{'-'*50}{Style.RESET_ALL}")
-            print(f"Menggunakan token: ...{token[-10:]}")
+            print(f"Memproses initData: ...{init_data[:10]}...")
+            
+            token = get_auth_token(init_data)
+            if not token:
+                print(f"{Fore.RED}Gagal mendapatkan token otorisasi.{Style.RESET_ALL}")
+                continue
+
             headers = {
                 "Authorization": f"Bearer {token}",
                 "User-Agent": user_agent
@@ -155,6 +189,5 @@ if __name__ == "__main__":
 
         print(f"{Fore.GREEN}Total points dari semua user: {total_points_sum}{Style.RESET_ALL}")
 
-        # Tunggu 60 menit sebelum mengulang
         print(f"{Fore.YELLOW}Menunggu 60 menit sebelum eksekusi ulang...{Style.RESET_ALL}")
         time.sleep(3600)
