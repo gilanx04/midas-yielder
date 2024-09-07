@@ -113,43 +113,48 @@ def play_game(headers):
         print(f"Game selesai! Anda telah melakukan {taps} tap, tetapi hanya mendapatkan {total_points} poin.")
 
 if __name__ == "__main__":
-    auth_tokens = read_auth_tokens('auth.txt')
-    total_points_sum = 0
-    
-    for token in auth_tokens:
-        print(f"\n{Fore.YELLOW}{'-'*50}{Style.RESET_ALL}")
-        print(f"Menggunakan token: ...{token[-10:]}")
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "User-Agent": user_agent
-        }
+    while True:  # Loop untuk mengulang setiap 60 menit
+        auth_tokens = read_auth_tokens('auth.txt')
+        total_points_sum = 0
+        
+        for token in auth_tokens:
+            print(f"\n{Fore.YELLOW}{'-'*50}{Style.RESET_ALL}")
+            print(f"Menggunakan token: {token[-10:]}...")
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "User-Agent": user_agent
+            }
 
-        print("Memeriksa klaim referral...")
-        claimed_points, claimed_tickets = claim_referral_rewards(headers)
-        claimed_tickets_used = False
+            print("Memeriksa klaim referral...")
+            claimed_points, claimed_tickets = claim_referral_rewards(headers)
+            claimed_tickets_used = False
 
-        if claimed_tickets > 0:
-            print(f"Tiket dari klaim referral: {claimed_tickets}")
-        else:
-            print(f"Tidak ada tiket yang diperoleh dari klaim referral.")
-
-        while True:
-            print("Mendapatkan informasi user...")
-            points, tickets = get_user_info(headers)
-            total_points_sum += points
-            
-            if tickets == 0 and claimed_tickets > 0 and not claimed_tickets_used:
-                tickets += claimed_tickets
-                claimed_tickets_used = True
-            
-            if tickets > 0:
-                print(f"\nTiket tersedia: {tickets}. Bermain game dengan 9 tap...")
-                play_game(headers)
-                tickets -= 1
-                claimed_tickets = 0
-                time.sleep(2)
+            if claimed_tickets > 0:
+                print(f"Tiket dari klaim referral: {claimed_tickets}")
             else:
-                print("Tiket habis. Tidak bisa bermain lagi.")
-                break
+                print(f"Tidak ada tiket yang diperoleh dari klaim referral.")
 
-    print(f"{Fore.GREEN}Total points dari semua user: {total_points_sum}{Style.RESET_ALL}")
+            while True:
+                print("Mendapatkan informasi user...")
+                points, tickets = get_user_info(headers)
+                total_points_sum += points
+                
+                if tickets == 0 and claimed_tickets > 0 and not claimed_tickets_used:
+                    tickets += claimed_tickets
+                    claimed_tickets_used = True
+                
+                if tickets > 0:
+                    print(f"\nTiket tersedia: {tickets}. Bermain game dengan 9 tap...")
+                    play_game(headers)
+                    tickets -= 1
+                    claimed_tickets = 0
+                    time.sleep(2)
+                else:
+                    print("Tiket habis. Tidak bisa bermain lagi.")
+                    break
+
+        print(f"{Fore.GREEN}Total points dari semua user: {total_points_sum}{Style.RESET_ALL}")
+
+        # Tunggu 60 menit sebelum mengulang
+        print(f"{Fore.YELLOW}Menunggu 60 menit sebelum eksekusi ulang...{Style.RESET_ALL}")
+        time.sleep(3600)
