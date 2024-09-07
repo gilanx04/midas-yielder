@@ -140,10 +140,13 @@ def play_game(headers):
     if total_points < 16:
         print(f"Game selesai! Anda telah melakukan {taps} tap, tetapi hanya mendapatkan {total_points} poin.")
 
+    return total_points
+
 if __name__ == "__main__":
     while True:
         init_data_list = read_init_data('auth.txt')
-        total_points_sum = 0
+        total_points_sum = 0  # Reset total points setiap loop
+        total_points_per_user = {}  # Dictionary untuk menyimpan total points per user
         
         for init_data in init_data_list:
             print(f"\n{Fore.YELLOW}{'-'*50}{Style.RESET_ALL}")
@@ -159,8 +162,11 @@ if __name__ == "__main__":
                 "User-Agent": user_agent
             }
 
+            user_total_points = 0  # Reset total points untuk user saat ini
+
             print("Memeriksa klaim referral...")
             claimed_points, claimed_tickets = claim_referral_rewards(headers)
+            user_total_points += claimed_points
             claimed_tickets_used = False
 
             if claimed_tickets > 0:
@@ -171,7 +177,7 @@ if __name__ == "__main__":
             while True:
                 print("Mendapatkan informasi user...")
                 points, tickets = get_user_info(headers)
-                total_points_sum += points
+                user_total_points += points - user_total_points  # Menambahkan poin yang berbeda dari sebelumnya
                 
                 if tickets == 0 and claimed_tickets > 0 and not claimed_tickets_used:
                     tickets += claimed_tickets
@@ -179,7 +185,8 @@ if __name__ == "__main__":
                 
                 if tickets > 0:
                     print(f"\nTiket tersedia: {tickets}. Bermain game dengan 9 tap...")
-                    play_game(headers)
+                    earned_game_points = play_game(headers)
+                    user_total_points += earned_game_points
                     tickets -= 1
                     claimed_tickets = 0
                     time.sleep(2)
@@ -187,6 +194,12 @@ if __name__ == "__main__":
                     print("Tiket habis. Tidak bisa bermain lagi.")
                     break
 
+            total_points_per_user[init_data[:10]] = user_total_points  # Menyimpan total poin per user
+            total_points_sum += user_total_points
+
+        for user, points in total_points_per_user.items():
+            print(f"Total points untuk user {user}: {points}")
+        
         print(f"{Fore.GREEN}Total points dari semua user: {total_points_sum}{Style.RESET_ALL}")
 
         print(f"{Fore.YELLOW}Menunggu 60 menit sebelum eksekusi ulang...{Style.RESET_ALL}")
