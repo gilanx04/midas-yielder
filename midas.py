@@ -119,7 +119,7 @@ if __name__ == "__main__":
         
         for token in auth_tokens:
             print(f"\n{Fore.YELLOW}{'-'*50}{Style.RESET_ALL}")
-            print(f"Menggunakan token: {token[-10:]}...")
+            print(f"Menggunakan token: ...{token[-10:]}")
             headers = {
                 "Authorization": f"Bearer {token}",
                 "User-Agent": user_agent
