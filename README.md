@@ -6,7 +6,7 @@ Midas Yielder Bot : https://t.me/MidasRWA_bot/app?startapp=ref_f2e1c651-3aa4-433
 - Multi Account
 - Accumulate All User Points
 # How to
-- copy paste token in auth.txt
+- copy paste query_id in auth.txt
 - git clone https://github.com/gilanx04/midas-yielder.git
 - cd midas-yielder
 - pip install colorama
