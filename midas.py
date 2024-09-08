@@ -12,6 +12,7 @@ url_user = "https://api-tg-app.midas.app/api/user"
 url_game = "https://api-tg-app.midas.app/api/game/play"
 url_referral = "https://api-tg-app.midas.app/api/referral/status"
 url_referral_claim = "https://api-tg-app.midas.app/api/referral/claim"
+url_streak = "https://api-tg-app.midas.app/api/streak"
 
 user_agent = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
@@ -36,7 +37,7 @@ def get_auth_token(init_data):
         response.raise_for_status()
         token = response.text
         if token:
-            print(f"Berhasil mendapatkan token: ...{token[-20:]}")  # Menampilkan 20 karakter terakhir
+            print(f"Berhasil mendapatkan token: ...{token[-20:]}")
             return token
         else:
             print(f"{Fore.RED}Token tidak ditemukan dalam respons.{Style.RESET_ALL}")
@@ -90,6 +91,38 @@ def claim_referral_rewards(headers, retries=3):
             
     print("Gagal mengakses API referral setelah beberapa percobaan.")
     return 0, 0
+
+def claim_streak_rewards(headers, retries=3):
+    for attempt in range(retries):
+        streak_data = get_request(url_streak, headers)
+        
+        if streak_data:
+            claimable = streak_data.get("claimable", False)
+            next_rewards = streak_data.get("nextRewards", {})
+            points = next_rewards.get("points", 0)
+            tickets = next_rewards.get("tickets", 0)
+
+            if claimable:
+                print(f"{Fore.GREEN}Klaim streak tersedia! Mengeksekusi klaim...{Style.RESET_ALL}")
+                claim_response = post_request(url_streak, headers)
+                
+                if claim_response:
+                    points_claimed = claim_response.get("points", points)
+                    tickets_claimed = claim_response.get("tickets", tickets)
+                    print(f"Klaim streak berhasil! Anda mendapatkan {points_claimed} poin dan {tickets_claimed} tiket.")
+                    return points_claimed, tickets_claimed
+                else:
+                    print(f"{Fore.RED}Error saat mengeksekusi klaim streak.{Style.RESET_ALL}")
+                    return 0, 0
+            else:
+                print(f"{Fore.YELLOW}Tidak ada klaim streak yang tersedia saat ini.{Style.RESET_ALL}")
+                return 0, 0
+        else:
+            print(f"{Fore.RED}Request error. Mencoba kembali... ({attempt+1}/{retries}){Style.RESET_ALL}")
+            time.sleep(5)
+            
+    return 0, 0
+
 
 def get_user_info(headers):
     data = get_request(url_user, headers)
@@ -145,8 +178,8 @@ def play_game(headers):
 if __name__ == "__main__":
     while True:
         init_data_list = read_init_data('auth.txt')
-        total_points_sum = 0  # Reset total points setiap loop
-        total_points_per_user = {}  # Dictionary untuk menyimpan total points per user
+        total_points_sum = 0
+        total_points_per_user = {}
         
         for init_data in init_data_list:
             print(f"\n{Fore.YELLOW}{'-'*50}{Style.RESET_ALL}")
@@ -162,22 +195,28 @@ if __name__ == "__main__":
                 "User-Agent": user_agent
             }
 
-            user_total_points = 0  # Reset total points untuk user saat ini
+            user_total_points = 0
 
             print("Memeriksa klaim referral...")
             claimed_points, claimed_tickets = claim_referral_rewards(headers)
             user_total_points += claimed_points
             claimed_tickets_used = False
 
+            print("Memeriksa klaim streak...")
+            streak_points, streak_tickets = claim_streak_rewards(headers)
+            user_total_points += streak_points
+            claimed_tickets += streak_tickets
+
+
             if claimed_tickets > 0:
-                print(f"Tiket dari klaim referral: {claimed_tickets}")
+                print(f"Tiket dari klaim: {claimed_tickets}")
             else:
-                print(f"Tidak ada tiket yang diperoleh dari klaim referral.")
+                print(f"Tidak ada tiket yang diperoleh dari klaim.")
 
             while True:
                 print("Mendapatkan informasi user...")
                 points, tickets = get_user_info(headers)
-                user_total_points += points - user_total_points  # Menambahkan poin yang berbeda dari sebelumnya
+                user_total_points += points - user_total_points
                 
                 if tickets == 0 and claimed_tickets > 0 and not claimed_tickets_used:
                     tickets += claimed_tickets
@@ -194,7 +233,7 @@ if __name__ == "__main__":
                     print("Tiket habis. Tidak bisa bermain lagi.")
                     break
 
-            total_points_per_user[init_data[:10]] = user_total_points  # Menyimpan total poin per user
+            total_points_per_user[init_data[:10]] = user_total_points
             total_points_sum += user_total_points
 
         for user, points in total_points_per_user.items():
