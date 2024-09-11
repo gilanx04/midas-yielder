@@ -303,5 +303,6 @@ if __name__ == "__main__":
            
         print(f"{Fore.GREEN}Total points dari semua user: {total_points_sum}{Style.RESET_ALL}")
 
-        print(f"{Fore.YELLOW}Menunggu 60 menit sebelum eksekusi ulang...{Style.RESET_ALL}")
-        time.sleep(3600)
+        print(f"{Fore.YELLOW}Menunggu 8 jam sebelum eksekusi ulang...{Style.RESET_ALL}")
+        time.sleep(28800)
+        
