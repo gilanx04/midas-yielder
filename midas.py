@@ -147,7 +147,7 @@ def play_game(headers, tickets):
     return total_points
 
 def process_init_data(init_data):
-    print(f"\nMemproses initData: {init_data}")
+    print(f"\nMemproses initData: ...{init_data[-20:]}")
 
     url_register = "https://api-tg-app.midas.app/api/auth/register"
     headers_register = {
@@ -170,8 +170,10 @@ def process_init_data(init_data):
     response_text, cookies = post_request(url_register, headers_register, payload)
 
     if response_text:
-        print(f"Token yang didapat: {response_text}")
-        print(f"Cookies yang diterima: {cookies.get_dict()}")  
+        print(f"Token yang didapat: ...{response_text[-20:]}") 
+        cookies_dict = cookies.get_dict()
+        cookies_preview = {key: f"...{value[-20:]}" for key, value in cookies_dict.items()} 
+        print(f"Cookies yang diterima: {cookies_preview}")
 
         token = response_text
 
@@ -189,8 +191,6 @@ def process_init_data(init_data):
             "Authorization": f"Bearer {token}",
             "Cookie": "; ".join([f"{key}={value}" for key, value in cookies.get_dict().items()])
         }
-
-        tickets, points = get_user_info(headers_user)
 
         get_streak_info(headers_user)
 
