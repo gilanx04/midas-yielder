@@ -4,6 +4,7 @@ import time
 CYAN = '\033[96m'
 GREEN = '\033[92m'
 RED = '\033[91m'
+YELLOW = '\033[93m'
 RESET = '\033[0m'
 
 def post_request(url, headers, payload=None):
@@ -16,7 +17,7 @@ def post_request(url, headers, payload=None):
         except ValueError:
             return response.text, response.cookies
     else:
-        print(f"Request gagal dengan status code: {response.status_code}")
+        print(f"akwowkw Request gagal dengan status code: {response.status_code}")
         print(f"Response text: {response.text}")
         return None, None
 
@@ -31,7 +32,7 @@ def get_request(url, headers):
             print("Response bukan JSON.")
             return None
     else:
-        print(f"Request gagal mendapatkan informasi dengan status code: {response.status_code}")
+        print(f"akwowkw Request gagal mendapatkan informasi dengan status code: {response.status_code}")
         print(f"Response text: {response.text}")
         return None
 
@@ -56,27 +57,26 @@ def get_streak_info(headers):
         claimable = streak_data.get("claimable", False)
 
         print(f"Streak Days Count: {streak_days_count}")
-        print(f"Next Rewards - Points: {points}, Tickets: {tickets}")
+        print(f"Hadiah yang bisa di klaim - Points: {GREEN}{points}{RESET}, Tickets: {GREEN}{tickets}{RESET}")
         
         if claimable:
-            print("Streak tersedia untuk diklaim.")
+            print(f"{GREEN}Streak tersedia untuk diklaim.{RESET}")
             claim_streak(headers)
         else:
-            print("Streak tidak tersedia untuk diklaim.")
+            print(f"{YELLOW}Streak tidak tersedia untuk diklaim.{RESET}")
     else:
         print("Error: Tidak dapat mengakses API streak.")
 
 def claim_streak(headers):
     url_claim = "https://api-tg-app.midas.app/api/streak"
     response, _ = post_request(url_claim, headers)
-    
+        
     if response:
         points = response.get("points", "Tidak ditemukan")
         tickets = response.get("tickets", "Tidak ditemukan")
-        print(f"Claim berhasil! Points: {points}, Tickets: {tickets}")
-        return points, tickets
+        print(f"{GREEN}Klaim tiket dan poin harian berhasil!{RESET}") 
     else:
-        print("Error: Gagal melakukan klaim streak.")
+        print(f"{RED}Error: Gagal melakukan klaim harian.{RESET}") 
         return 0, 0
 
 def get_user_info(headers):
@@ -117,22 +117,22 @@ def check_referral_status(headers):
     if referral_data:
         can_claim = referral_data.get("canClaim", False)
         if can_claim:
-            print("Klaim tersedia! Mengeksekusi klaim...")
+            print(f"{GREEN}Klaim refferal tersedia! Mengeksekusi klaim...{RESET}")
             claim_response, _ = post_request(url_referral_claim, headers)
             
             if claim_response:
                 total_points = claim_response.get("totalPoints", 0)
                 total_tickets = claim_response.get("totalTickets", 0)
-                print(f"Klaim berhasil! Anda mendapatkan {total_points} poin dan {total_tickets} tiket.")
+                print(f"{GREEN}Klaim refferal berhasil!{RESET} Anda mendapatkan {GREEN}{total_points}{RESET} poin dan {GREEN}{total_tickets}{RESET} tiket.")
                 return total_points, total_tickets
             else:
-                print("Error saat mengeksekusi klaim.")
+                print(f"{RED}Error saat mengeksekusi klaim refferal.{RESET}")
                 return 0, 0
         else:
-            print("Tidak ada klaim yang tersedia saat ini.")
+            print(f"{YELLOW}Tidak ada klaim refferal yang tersedia saat ini.{RESET}")
             return 0, 0
     else:
-        print("Request error. Mencoba kembali...")
+        print(f"{RED}Request error.{RESET} {YELLOW}Mencoba kembali...{RESET}")
         return 0, 0
 
 def play_game(headers, tickets):
@@ -140,22 +140,26 @@ def play_game(headers, tickets):
     total_points = 0
 
     while tickets > 0:
-        print("Memulai game ...")
+        for i in range(3, 0, -1):
+            print(f"Memulai game dalam {YELLOW}{i}{RESET} detik...", end='\r')
+            time.sleep(1)
+
+        print(f"\n{YELLOW}Memulai game ...{RESET}")
         game_data, _ = post_request(url_game, headers)
-        
+    
         if game_data:
             points_earned = game_data.get("points", 0)
             total_points += points_earned
-            tickets -= 1  # Asumsi satu game mengurangi satu tiket
-            print(f"Earned {points_earned} points, Total Points: {total_points}, Remaining Tickets: {tickets}")
+            tickets -= 1 
+            print(f"Mendapatkan {GREEN}{points_earned} poin{RESET}, Total Points: {GREEN}{total_points}{RESET}, Sisa Tiket: {YELLOW}{tickets}{YELLOW}")
         else:
-            print("Error saat bermain game.")
+            print(f"{RED}Error saat bermain game.{RESET}")
             break
-    
+
     return total_points
 
 def process_init_data(init_data):
-    print(f"\nMemproses initData: ...{init_data[-20:]}")
+    print(f"\nMemproses initData: {YELLOW}...{init_data[-20:]}{RESET}")
 
     url_register = "https://api-tg-app.midas.app/api/auth/register"
     headers_register = {
@@ -178,10 +182,10 @@ def process_init_data(init_data):
     response_text, cookies = post_request(url_register, headers_register, payload)
 
     if response_text:
-        print(f"Token yang didapat: ...{response_text[-20:]}") 
+        print(f"Token yang didapat: {YELLOW}...{response_text[-20:]}{RESET}") 
         cookies_dict = cookies.get_dict()
         cookies_preview = {key: f"...{value[-20:]}" for key, value in cookies_dict.items()} 
-        print(f"Cookies yang diterima: {cookies_preview}")
+        print(f"Cookies yang diterima: {YELLOW}{cookies_preview}{RESET}")
 
         token = response_text
 
@@ -208,9 +212,9 @@ def process_init_data(init_data):
         
         if tickets > 0:
             total_points = play_game(headers_user, tickets)
-            print(f"Total Points setelah bermain game: {total_points}")
+            print(f"Total Points setelah bermain game: {GREEN}{total_points}{RESET}")
         else:
-            print("Tidak ada tiket yang tersedia untuk bermain game.")
+            print(f"{YELLOW}Tidak ada tiket yang tersedia untuk bermain game.{RESET}")
     else:
         print("Error: Tidak dapat mendapatkan token.")
 
@@ -234,3 +238,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+        
