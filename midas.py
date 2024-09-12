@@ -1,6 +1,11 @@
 import cloudscraper
 import time
 
+CYAN = '\033[96m'
+GREEN = '\033[92m'
+RED = '\033[91m'
+RESET = '\033[0m'
+
 def post_request(url, headers, payload=None):
     scraper = cloudscraper.create_scraper()
     response = scraper.post(url, json=payload, headers=headers)
@@ -86,12 +91,15 @@ def get_user_info(headers):
         tickets = user_data.get("tickets", 0)
         games_played = user_data.get("gamesPlayed", "Tidak ditemukan")
         streak_days_count = user_data.get("streakDaysCount", "Tidak ditemukan")
-
+        
         print(f"Telegram ID: {telegram_id}")
-        print(f"Username: {username}")
-        print(f"First Name: {first_name}")
-        print(f"Points: {points}")
-        print(f"Tickets: {tickets}")
+        print(f"Username: {CYAN}{username}{RESET}")
+        print(f"First Name: {CYAN}{first_name}{RESET}")
+        print(f"Points: {GREEN}{points}{RESET}") 
+        if tickets == 0:
+            print(f"Tickets: {RED}{tickets}{RESET}") 
+        else:
+            print(f"Tickets: {GREEN}{tickets}{RESET}") 
         print(f"Games Played: {games_played}")
         print(f"Streak Days Count: {streak_days_count}")
         
